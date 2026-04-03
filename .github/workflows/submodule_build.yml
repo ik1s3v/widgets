@@ -1,4 +1,4 @@
-name: Detect Single Changed Submodule
+name: Submodule build
 
 on:
   pull_request:
@@ -7,8 +7,11 @@ on:
       - master
 
 jobs:
-  find-submodule:
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      submodule_path: ${{ steps.find.outputs.submodule_path }}
+      found: ${{ steps.find.outputs.found }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,12 +20,107 @@ jobs:
 
       - name: Get changed submodule
         run: |
-          changes=$(git diff --name-only origin/master...HEAD widgets/)
-          if [ -z "$changes" ]; then
+          CHANGED=$(git diff --name-only origin/master...HEAD widgets/)
+          if [ -z "$CHANGED" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
             echo "No submodule changes detected."
           else
             echo "The following submodules were added or updated:"
-            echo "$changes"
+            echo "submodule_path=$CHANGED" >> $GITHUB_OUTPUT
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "$CHANGED"
           fi
 
-      
+  build:
+      name: Build (${{ needs.detect.outputs.submodule_path }})
+      runs-on: ubuntu-latest
+      needs: detect
+      if: needs.detect.outputs.found == 'true'
+
+      # No permissions — read-only token, no secrets exposed
+      permissions:
+        contents: read
+
+      # Hard timeout — prevent runaway builds
+      timeout-minutes: 15
+
+      steps:
+        - name: Checkout PR head with submodules
+          uses: actions/checkout@v4
+          with:
+            ref: refs/pull/${{ github.event.pull_request.number }}/merge
+            submodules: recursive
+            fetch-depth: 1
+
+        - name: Validate submodule path (no traversal attacks)
+          run: |
+            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
+
+            # Block path traversal
+            if [[ "$SUBMODULE" == *".."* || "$SUBMODULE" == "/"* ]]; then
+              echo "ERROR: Invalid submodule path: $SUBMODULE"
+              exit 1
+            fi
+
+            # Must be inside widgets/ folder
+            if [[ "$SUBMODULE" != widgets/* ]]; then
+              echo "ERROR: Submodule is not under widgets/ folder: $SUBMODULE"
+              exit 1
+            fi
+
+            # Must exist in .gitmodules (already committed to repo)
+            if ! grep -q "path = $SUBMODULE" .gitmodules; then
+              echo "ERROR: Submodule not found in .gitmodules: $SUBMODULE"
+              exit 1
+            fi
+
+            # Must be an actual directory
+            if [ ! -d "$SUBMODULE" ]; then
+              echo "ERROR: Submodule directory does not exist: $SUBMODULE"
+              exit 1
+            fi
+
+            echo "Submodule path is valid: $SUBMODULE"
+
+        - name: Check package.json exists
+          run: |
+            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
+            if [ ! -f "$SUBMODULE/package.json" ]; then
+              echo "ERROR: No package.json found in $SUBMODULE"
+              exit 1
+            fi
+
+        - name: Set up Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: 20
+
+        - name: Install dependencies (no scripts, offline-safe)
+          working-directory: ${{ needs.detect.outputs.submodule_path }}
+          run: |
+            # --ignore-scripts: blocks preinstall/postinstall hooks from running
+            # --no-audit: skip network call to npm audit registry
+            npm ci --ignore-scripts --no-audit --no-fund
+          env:
+            # Guarantee no tokens/secrets leak into this step
+            NODE_AUTH_TOKEN: ""
+            NPM_TOKEN: ""
+            GITHUB_TOKEN: ""
+
+        - name: Build
+          working-directory: ${{ needs.detect.outputs.submodule_path }}
+          run: npm run build:all
+          env:
+            NODE_ENV: production
+            # Explicitly clear all secrets
+            NODE_AUTH_TOKEN: ""
+            NPM_TOKEN: ""
+            GITHUB_TOKEN: ""
+
+        - name: Upload build output (optional)
+          uses: actions/upload-artifact@v4
+          with:
+            name: submodule-build-${{ github.event.pull_request.number }}
+            path: ${{ needs.detect.outputs.submodule_path }}/dist
+            if-no-files-found: warn
+            retention-days: 3     
