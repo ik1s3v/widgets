@@ -1,9 +1,10 @@
 name: Detect Single Changed Submodule
 
 on:
-  pull_request:
-    paths:
-      - 'widgets/**'
+  pull_request_target:
+    branches:
+      - main
+      - master
 
 jobs:
   find-submodule:
