@@ -26,10 +26,6 @@ jobs:
       - name: Find added or changed submodule under widgets/
         id: find
         run: |
-          # Debug: print the PR number being used
-          echo "Fetching PR #${{ github.event.pull_request.number }}"
-
-          # Add error handling for the fetch
           if ! git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head; then
             echo "ERROR: Failed to fetch PR head"
             echo "PR Number: ${{ github.event.pull_request.number }}"
