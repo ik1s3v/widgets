@@ -16,31 +16,13 @@ jobs:
           fetch-depth: 0 
 
       - name: Get changed submodule
-        id: check
         run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          
-          # Find all Added (A) or Modified (M) files in widgets/
-          # We loop through them and stop at the first one that is a submodule (160000)
-          SUBMODULE_PATH=""
-          
-          for path in $(git diff --name-only --diff-filter=AM $BASE_SHA $HEAD_SHA -- 'widgets/*'); do
-            if git ls-tree "$HEAD_SHA" "$path" | grep -q "^160000"; then
-              SUBMODULE_PATH="$path"
-              break # Stop after finding the first one
-            fi
-          done
-
-          if [ -z "$SUBMODULE_PATH" ]; then
+          changes=$(git diff --name-only origin/master...HEAD widgets/)
+          if [ -z "$changes" ]; then
             echo "No submodule changes detected."
           else
-            echo "Found submodule: $SUBMODULE_PATH"
-            echo "submodule_path=$SUBMODULE_PATH" >> $GITHUB_OUTPUT
+            echo "The following submodules were added or updated:"
+            echo "$changes"
           fi
 
-      - name: Use the path
-        if: steps.check.outputs.submodule_path != ''
-        run: |
-          echo "Processing submodule: ${{ steps.check.outputs.submodule_path }}"
-          # Example: cd ${{ steps.check.outputs.submodule_path }} && do_something
+      
