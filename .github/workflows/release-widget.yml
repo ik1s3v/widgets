@@ -46,6 +46,7 @@ jobs:
 
       - name: Download release widgets
         run: |
+          mkdir -p ${{ github.workspace }}/widget
           gh release download widgets --pattern "widgets.json" --dir ${{ github.workspace }}/widget || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,6 +57,7 @@ jobs:
           WIDGET_VERSION: ${{ steps.manifest.outputs.widget_version }}
           WIDGET_ID: ${{ steps.manifest.outputs.widget_id }}
         run: bun run scripts/updateWidgets.ts    
+
       - name: Create widgets Release
         uses: softprops/action-gh-release@v2
         with:
