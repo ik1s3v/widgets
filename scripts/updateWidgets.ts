@@ -19,7 +19,9 @@ try {
 
 	widgets[id] = manifest;
 
-	writeFileSync("widgets.json", JSON.stringify(widgets), "utf-8");
+	writeFileSync("widgets.json", JSON.stringify(widgets, null, 2), {
+		encoding: "utf-8",
+	});
 
 	core.setOutput("widget_version", manifest.version);
 	core.setOutput("widget_id", manifest.id);

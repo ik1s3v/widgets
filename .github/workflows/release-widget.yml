@@ -47,18 +47,26 @@ jobs:
           WIDGET_VERSION: ${{ needs.detect.outputs.widget_version }}
           WIDGET_ID: ${{ needs.detect.outputs.widget_id }}
         run: bun run scripts/updateWidgets.ts
+        
+      - name: Commit updated widgets.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add widgets.json
+          git commit -m "chore: update widgets.json for ${{ needs.detect.outputs.widget_id }}"
+          git push  
 
-      - name: Zip release artifact
-        env:
-          WIDGET_VERSION: ${{ needs.detect.outputs.widget_version }}
-          WIDGET_ID: ${{ needs.detect.outputs.widget_id }}
-        run: zip -r build.zip ${{ github.workspace }}/widget
+      # - name: Zip release artifact
+      #   env:
+      #     WIDGET_VERSION: ${{ needs.detect.outputs.widget_version }}
+      #     WIDGET_ID: ${{ needs.detect.outputs.widget_id }}
+      #   run: zip -r build.zip ${{ github.workspace }}/widget
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: dfg
-          name: "Build widget from PR Check"
-          files: build.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Create GitHub release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: dfg
+      #     name: "Build widget from PR Check"
+      #     files: build.zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
