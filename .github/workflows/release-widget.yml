@@ -49,16 +49,18 @@ jobs:
         run: bun run scripts/updateWidgets.ts
 
       - name: Zip release artifact
+        working-directory: ${{ needs.detect.outputs.submodule_path }}
         env:
           WIDGET_VERSION: ${{ needs.detect.outputs.widget_version }}
           WIDGET_ID: ${{ needs.detect.outputs.widget_id }}
-        run: zip -r "${WIDGET_ID}-${WIDGET_VERSION}.zip" ${{ github.workspace }}/widget
+        run: zip -r build.zip .
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
+        working-directory: ${{ needs.detect.outputs.submodule_path }}
         with:
           tag_name: ${{ needs.detect.outputs.widget_id }}-${{ needs.detect.outputs.widget_version }}
           name: "Build widget from PR Check"
-          files: ${{ needs.detect.outputs.widget_id }}-${{ needs.detect.outputs.widget_version }}.zip
+          files: build.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
