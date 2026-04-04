@@ -57,7 +57,7 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.detect.outputs.widget_id }}-${{ needs.detect.outputs.widget_version }}
+          tag_name: dfg
           name: "Build widget from PR Check"
           files: build.zip
         env:
