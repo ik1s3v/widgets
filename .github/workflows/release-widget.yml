@@ -1,0 +1,61 @@
+name: Release widget
+on:
+  workflow_run:
+    workflows: ["Build widget"] 
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: widget
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile    
+
+      - name: Validate widget manifest
+        with:
+          submodule_path: ${{ github.workspace }}/widget
+        run: bun run scripts/validateManifest.ts
+
+      - name: Update widgets
+        with:
+          submodule_path: ${{ github.workspace }}/widget
+          version: ${{ needs.detect.outputs.version }}
+          id: ${{ needs.detect.outputs.id }}
+        run: bun run scripts/updateWidgets.ts
+
+      - name: Zip release artifact
+        run: zip -r ${{ needs.detect.outputs.id }}-${{ needs.detect.outputs.version }}.zip .
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.detect.outputs.id }}-${{ needs.detect.outputs.version }}
+          name: "Build widget from PR Check"
+          files: ${{ needs.detect.outputs.id }}-${{ needs.detect.outputs.version }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

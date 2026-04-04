@@ -1,9 +1,8 @@
-name: Submodule build
+name: Build widget
 
 on:
   pull_request:
     branches:
-      - main
       - master
 
 jobs:
@@ -31,18 +30,15 @@ jobs:
             echo "found=true" >> $GITHUB_OUTPUT
             echo "$CHANGED"
           fi
-
   build:
       name: Build (${{ needs.detect.outputs.submodule_path }})
       runs-on: ubuntu-latest
       needs: detect
       if: needs.detect.outputs.found == 'true'
 
-      # No permissions — read-only token, no secrets exposed
       permissions:
         contents: read
-
-      # Hard timeout — prevent runaway builds
+        
       timeout-minutes: 15
 
       steps:
