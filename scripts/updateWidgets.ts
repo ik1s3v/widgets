@@ -4,11 +4,11 @@ import * as core from "@actions/core";
 import type { IManifest } from "@widy/sdk";
 
 try {
-	const submodulePath = core.getInput("submodule_path");
+	const widgetPath = String(process.env.WIDGET_PATH);
 
-	const id = core.getInput("id");
+	const id = String(process.env.WIDGET_ID);
 
-	const manifestPath = join(submodulePath, "manifest.json");
+	const manifestPath = join(widgetPath, "manifest.json");
 
 	const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as IManifest;
 

@@ -4,9 +4,9 @@ import * as core from "@actions/core";
 import type { IManifest } from "@widy/sdk";
 import { z } from "zod";
 
-const submodulePath = core.getInput("submodule_path");
+const widgetPath = String(process.env.WIDGET_PATH);
 
-const manifestPath = join(submodulePath, "manifest.json");
+const manifestPath = join(widgetPath, "manifest.json");
 
 try {
 	const ManifestSchema = z.object({
@@ -28,8 +28,8 @@ try {
 
 	ManifestSchema.parse(manifest);
 
-	core.setOutput("version", manifest.version);
-	core.setOutput("id", manifest.id);
+	core.setOutput("widget_version", manifest.version);
+	core.setOutput("widget_id", manifest.id);
 
 	console.log("✅ Manifest valid!");
 } catch (error) {
