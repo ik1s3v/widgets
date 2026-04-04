@@ -6,11 +6,10 @@ on:
       - completed
 
 jobs:
-  release:
+  validate:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
-      contents: write
       pull-requests: read
     
     steps:
@@ -37,37 +36,40 @@ jobs:
         run: bun install --frozen-lockfile    
 
       - name: Validate widget manifest
-        id: manifest
         env:
           WIDGET_PATH: ${{ github.workspace }}/widget
         run: bun run scripts/validateManifest.ts
 
-      - name: Update widgets
+  
+  upload:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Zip for Release
+        run: zip -r  ${{ needs.validate.outputs.widget_id }}-${{ needs.validate.outputs.widget_version }}.zip .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Using the ID of the workflow run as a unique tag
+          tag_name: ${{ needs.validate.outputs.widget_id }}-${{ needs.validate.outputs.widget_version }}
+          name: "Build ${{ needs.validate.outputs.widget_id }}-${{ needs.validate.outputs.widget_version }} from PR Check"
+          files: ${{ needs.validate.outputs.widget_id }}-${{ needs.validate.outputs.widget_version }}.zip
         env:
-          WIDGET_PATH: ${{ github.workspace }}/widget
-          WIDGET_VERSION: ${{ steps.manifest.outputs.widget_version }}
-          WIDGET_ID: ${{ steps.manifest.outputs.widget_id }}
-        run: bun run scripts/updateWidgets.ts
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
 
-      - name: Commit updated widgets.json
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add widgets.json
-          git commit -m "chore: update widgets.json for ${{ steps.manifest.outputs.widget_id }}"
-          git push  
 
-      # - name: Zip release artifact
-      #   env:
-      #     WIDGET_VERSION: ${{ needs.detect.outputs.widget_version }}
-      #     WIDGET_ID: ${{ needs.detect.outputs.widget_id }}
-      #   run: zip -r build.zip ${{ github.workspace }}/widget
-
-      # - name: Create GitHub release
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     tag_name: dfg
-      #     name: "Build widget from PR Check"
-      #     files: build.zip
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+     
