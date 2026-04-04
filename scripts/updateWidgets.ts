@@ -12,10 +12,14 @@ try {
 
 	const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as IManifest;
 
-	const widgets = JSON.parse(readFileSync("widgets.json", "utf-8")) as Record<
-		string,
-		IManifest
-	>;
+	const widgetsPath = join(widgetPath, "widgets.json");
+
+	let widgets: Record<string, IManifest>;
+	try {
+		widgets = JSON.parse(readFileSync(widgetsPath, "utf-8"));
+	} catch {
+		widgets = {};
+	}
 
 	widgets[id] = manifest;
 
