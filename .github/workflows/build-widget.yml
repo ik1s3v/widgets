@@ -26,8 +26,7 @@ jobs:
             echo "No submodule changes detected."
           else
             echo "The following submodules were added or updated:"
-            FIRST_SUBMODULE=$(echo "$CHANGED" | head -n1)
-            echo "submodule_path=widgets/$FIRST_SUBMODULE" >> $GITHUB_OUTPUT
+            echo "submodule_path=$CHANGED" >> $GITHUB_OUTPUT
             echo "found=true" >> $GITHUB_OUTPUT
             echo "$CHANGED"
           fi
