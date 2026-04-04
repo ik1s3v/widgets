@@ -49,17 +49,11 @@ jobs:
         run: bun run scripts/updateWidgets.ts
 
       - name: Zip release artifact
-        run: |
-          WIDGET_ID="${{ needs.detect.outputs.widget_id }}"
-          WIDGET_VERSION="${{ needs.detect.outputs.widget_version }}"
-          
-          if [ -z "$WIDGET_ID" ] || [ -z "$WIDGET_VERSION" ]; then
-            echo "Error: Widget ID or Version is empty!"
-            exit 1
-          fi
-          
-          zip -r "${WIDGET_ID}-${WIDGET_VERSION}.zip" .
-
+        env:
+          WIDGET_VERSION: ${{ needs.detect.outputs.widget_version }}
+          WIDGET_ID: ${{ needs.detect.outputs.widget_id }}
+        run: zip -r "${WIDGET_ID}-${WIDGET_VERSION}.zip" .
+        
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
