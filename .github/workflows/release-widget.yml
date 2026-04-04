@@ -59,6 +59,6 @@ jobs:
         with:
           tag_name: ${{ needs.detect.outputs.widget_id }}-${{ needs.detect.outputs.widget_version }}
           name: "Build widget from PR Check"
-          files: ${{ github.workspace }}/widget/build.zip
+          files: build.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
