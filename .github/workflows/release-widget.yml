@@ -75,7 +75,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
-    
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -98,11 +97,3 @@ jobs:
 
 
           
-      # - name: Create widget Release
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     tag_name: ${{ needs.validate.outputs.widget_id }}-v${{ needs.validate.outputs.widget_version }}
-      #     name: ${{ needs.validate.outputs.widget_id }}-v${{ needs.validate.outputs.widget_version }}
-      #     files: ${{ needs.validate.outputs.widget_id }}-v${{ needs.validate.outputs.widget_version }}.zip
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
