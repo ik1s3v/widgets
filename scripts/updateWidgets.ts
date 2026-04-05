@@ -23,7 +23,7 @@ try {
 
 	widgets[id] = manifest;
 
-	writeFileSync("widgets.json", JSON.stringify(widgets, null, 2), {
+	writeFileSync(widgetsPath, JSON.stringify(widgets, null, 2), {
 		encoding: "utf-8",
 	});
 } catch (error) {
