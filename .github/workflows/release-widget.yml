@@ -14,7 +14,6 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       pull-requests: read
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,30 +42,6 @@ jobs:
         env:
           WIDGET_PATH: ${{ github.workspace }}/widget
         run: bun run scripts/validateManifest.ts
-
-      # - name: Download release widgets
-      #   run: |
-      #     mkdir -p ${{ github.workspace }}/widget
-      #     gh release download widgets --pattern "widgets.json" --dir ${{ github.workspace }}/widget || true
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Update widgets
-      #   env:
-      #     WIDGET_PATH: ${{ github.workspace }}/widget
-      #     WIDGET_VERSION: ${{ steps.manifest.outputs.widget_version }}
-      #     WIDGET_ID: ${{ steps.manifest.outputs.widget_id }}
-      #   run: bun run scripts/updateWidgets.ts    
-
-      # - name: Create widgets Release
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     tag_name: widgets2
-      #     draft: true 
-      #     files: ${{ github.workspace }}/widget/widgets.json
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
-  
 
   upload:
     runs-on: ubuntu-latest
