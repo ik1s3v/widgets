@@ -85,7 +85,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Zip for Release
-        run: zip -r  ${{ needs.validate.outputs.widget_id }}-${{ needs.validate.outputs.widget_version }}.zip .
+        run: zip -r  ${{ needs.validate.outputs.widget_id }}-v${{ needs.validate.outputs.widget_version }}.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
