@@ -63,6 +63,7 @@ jobs:
         with:
           tag_name: widgets
           name: widgets
+          draft: true 
           files: ${{ github.workspace }}/widget/widgets.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
