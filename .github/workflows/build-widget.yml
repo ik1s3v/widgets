@@ -20,7 +20,7 @@ jobs:
       - name: Get changed submodule
         id: find
         run: |
-          CHANGED=$(git diff --name-only origin/master...HEAD widgets/)
+          CHANGED=$(git diff --name-only origin/master...HEAD widgets/ | head -n 1)
           if [ -z "$CHANGED" ]; then
             echo "found=false" >> $GITHUB_OUTPUT
             echo "No submodule changes detected."
