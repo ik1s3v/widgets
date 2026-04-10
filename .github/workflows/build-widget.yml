@@ -20,7 +20,7 @@ jobs:
       - name: Get changed submodule
         id: find
         run: |
-          CHANGED=$(git diff --name-only origin/master...HEAD widgets/)
+          CHANGED=$(git diff --name-only origin/master...HEAD widgets/ | head -n 1)
           if [ -z "$CHANGED" ]; then
             echo "found=false" >> $GITHUB_OUTPUT
             echo "No submodule changes detected."
@@ -35,12 +35,9 @@ jobs:
       runs-on: ubuntu-latest
       needs: detect
       if: needs.detect.outputs.found == 'true'
-
       permissions:
         contents: read
-        
       timeout-minutes: 15
-
       steps:
         - name: Checkout PR head with submodules
           uses: actions/checkout@v4
@@ -48,17 +45,14 @@ jobs:
             ref: refs/pull/${{ github.event.pull_request.number }}/merge
             submodules: recursive
             fetch-depth: 1
-
         - name: Validate submodule path (no traversal attacks)
           run: |
             SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
-
             # Block path traversal
             if [[ "$SUBMODULE" == *".."* || "$SUBMODULE" == "/"* ]]; then
               echo "ERROR: Invalid submodule path: $SUBMODULE"
               exit 1
             fi
-
             # Must be inside widgets/ folder
             if [[ "$SUBMODULE" != widgets/* ]]; then
               echo "ERROR: Submodule is not under widgets/ folder: $SUBMODULE"
@@ -95,28 +89,40 @@ jobs:
         - name: Install dependencies (no scripts, offline-safe)
           working-directory: ${{ needs.detect.outputs.submodule_path }}
           run: |
-            # --ignore-scripts: blocks preinstall/postinstall hooks from running
-            # --no-audit: skip network call to npm audit registry
             npm ci --ignore-scripts --no-audit --no-fund
           env:
-            # Guarantee no tokens/secrets leak into this step
             NODE_AUTH_TOKEN: ""
             NPM_TOKEN: ""
             GITHUB_TOKEN: ""
 
         - name: Build
           working-directory: ${{ needs.detect.outputs.submodule_path }}
-          run: npm run build:all
+          run: npm run build
           env:
             NODE_ENV: production
-            # Explicitly clear all secrets
             NODE_AUTH_TOKEN: ""
             NPM_TOKEN: ""
             GITHUB_TOKEN: ""
 
+        - name: Check view/index.html exists
+          run: |
+            INDEX_HTML_PATH="${{ needs.detect.outputs.submodule_path }}/dist/view"
+            if [ ! -f "$INDEX_HTML_PATH/index.html" ]; then
+              echo "ERROR: No index.html found in $INDEX_HTML_PATH"
+              exit 1
+            fi
+
+        - name: Check control/index.html exists
+          run: |
+            INDEX_HTML_PATH="${{ needs.detect.outputs.submodule_path }}/dist/control"
+            if [ ! -f "$INDEX_HTML_PATH/index.html" ]; then
+              echo "ERROR: No index.html found in $INDEX_HTML_PATH"
+              exit 1
+            fi
+
         - name: Upload Artifact
           uses: actions/upload-artifact@v4
           with:
-            name: build-artifact # We will look for this name in the next workflow
+            name: build-artifact 
             path: ${{ needs.detect.outputs.submodule_path }}/dist
             retention-days: 1
