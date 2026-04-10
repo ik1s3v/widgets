@@ -104,6 +104,30 @@ jobs:
             NPM_TOKEN: ""
             GITHUB_TOKEN: ""
 
+        - name: Check artifact size
+          run: |
+            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
+            DIST="$SUBMODULE/dist"
+            
+            MAX_SIZE_MB=200
+            
+            if [ ! -d "$DIST" ]; then
+              echo "ERROR: dist directory not found"
+              exit 1
+            fi
+            
+            SIZE_KB=$(du -sk "$DIST" | cut -f1)
+            SIZE_MB=$(echo "scale=2; $SIZE_KB / 1024" | bc)
+            
+            echo "Artifact size: ${SIZE_MB}MB (limit: ${MAX_SIZE_MB}MB)"
+            
+            if [ "$SIZE_KB" -gt $((MAX_SIZE_MB * 1024)) ]; then
+              echo "ERROR: Artifact too large: ${SIZE_MB}MB > ${MAX_SIZE_MB}MB"
+              exit 1
+            fi
+            
+            echo "Size check passed"
+
         - name: Check view/index.html exists
           run: |
             INDEX_HTML_PATH="${{ needs.detect.outputs.submodule_path }}/dist/view"
@@ -119,6 +143,7 @@ jobs:
               echo "ERROR: No index.html found in $INDEX_HTML_PATH"
               exit 1
             fi
+   
 
         - name: Upload Artifact
           uses: actions/upload-artifact@v4
