@@ -13,7 +13,7 @@ jobs:
       found: ${{ steps.find.outputs.found }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0 
 
@@ -69,8 +69,9 @@ jobs:
         contents: read
       timeout-minutes: 15
       steps:
+      
         - name: Checkout PR head with submodules
-          uses: actions/checkout@v4
+          uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
           with:
             ref: refs/pull/${{ github.event.pull_request.number }}/merge
             submodules: recursive
@@ -86,50 +87,32 @@ jobs:
             fi
 
         - name: Set up Node.js
-          uses: actions/setup-node@v4
+          uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
           with:
             node-version: 20
 
-        # - name: Install dependencies (no scripts, offline-safe)
-        #   working-directory: ${{ needs.detect.outputs.submodule_path }}
-        #   run: |
-        #     npm ci --ignore-scripts --no-audit --no-fund
-        #   env:
-        #     NODE_AUTH_TOKEN: ""
-        #     NPM_TOKEN: ""
-        #     GITHUB_TOKEN: ""
-
-        # - name: Build
-        #   working-directory: ${{ needs.detect.outputs.submodule_path }}
-        #   run: npm run build
-        #   env:
-        #     NODE_ENV: production
-        #     NODE_AUTH_TOKEN: ""
-        #     NPM_TOKEN: ""
-        #     GITHUB_TOKEN: ""
-        - name: Build in sandbox
-          env:
-            SUBMODULE_PATH: ${{ needs.detect.outputs.submodule_path }}
+        - name: Install dependencies (no scripts, offline-safe)
+          working-directory: ${{ needs.detect.outputs.submodule_path }}
           run: |
-            SRC="${GITHUB_WORKSPACE}/${SUBMODULE_PATH}"
-            DIST="${SRC}/dist"
-            
-            echo "Building: $SRC"
-            
-            mkdir -p "$DIST"
-            
-            docker run --rm \
-              --network none \
-              --memory 512m \
-              --cpus 1 \
-              -v "${SRC}:/src:ro" \
-              -v "${DIST}:/output" \
-              node:20-alpine \
-              sh -c "cp -r /src /app && cd /app && npm ci --ignore-scripts && npm run build && cp -r dist/* /output/ && chmod -R 777 /output/"
+            npm ci --ignore-scripts --no-audit --no-fund
+          env:
+            NODE_AUTH_TOKEN: ""
+            NPM_TOKEN: ""
+            GITHUB_TOKEN: ""
+
+        - name: Build
+          working-directory: ${{ needs.detect.outputs.submodule_path }}
+          run: npm run build
+          env:
+            NODE_ENV: production
+            NODE_AUTH_TOKEN: ""
+            NPM_TOKEN: ""
+            GITHUB_TOKEN: ""
 
         - name: Check artifact size
+          env:
+            SUBMODULE: ${{ needs.detect.outputs.submodule_path }}
           run: |
-            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
             DIST="$SUBMODULE/dist"
             
             MAX_SIZE_MB=200
@@ -152,16 +135,18 @@ jobs:
             echo "Size check passed"
 
         - name: Check view/index.html exists
+          env:
+            INDEX_HTML_PATH: "${{ needs.detect.outputs.submodule_path }}/dist/view"
           run: |
-            INDEX_HTML_PATH="${{ needs.detect.outputs.submodule_path }}/dist/view"
             if [ ! -f "$INDEX_HTML_PATH/index.html" ]; then
               echo "ERROR: No index.html found in $INDEX_HTML_PATH"
               exit 1
             fi
 
         - name: Check control/index.html exists
+          env:
+            INDEX_HTML_PATH: "${{ needs.detect.outputs.submodule_path }}/dist/control"
           run: |
-            INDEX_HTML_PATH="${{ needs.detect.outputs.submodule_path }}/dist/control"
             if [ ! -f "$INDEX_HTML_PATH/index.html" ]; then
               echo "ERROR: No index.html found in $INDEX_HTML_PATH"
               exit 1
@@ -169,7 +154,7 @@ jobs:
    
 
         - name: Upload Artifact
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
           with:
             name: build-artifact 
             path: ${{ needs.detect.outputs.submodule_path }}/dist
