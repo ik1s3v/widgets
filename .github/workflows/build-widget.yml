@@ -77,8 +77,9 @@ jobs:
             fetch-depth: 1
       
         - name: Check package.json exists
+          env:
+            SUBMODULE: ${{ needs.detect.outputs.submodule_path }}
           run: |
-            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
             if [ ! -f "$SUBMODULE/package.json" ]; then
               echo "ERROR: No package.json found in $SUBMODULE"
               exit 1
@@ -89,24 +90,35 @@ jobs:
           with:
             node-version: 20
 
-        - name: Install dependencies (no scripts, offline-safe)
-          working-directory: ${{ needs.detect.outputs.submodule_path }}
+        # - name: Install dependencies (no scripts, offline-safe)
+        #   working-directory: ${{ needs.detect.outputs.submodule_path }}
+        #   run: |
+        #     npm ci --ignore-scripts --no-audit --no-fund
+        #   env:
+        #     NODE_AUTH_TOKEN: ""
+        #     NPM_TOKEN: ""
+        #     GITHUB_TOKEN: ""
+
+        # - name: Build
+        #   working-directory: ${{ needs.detect.outputs.submodule_path }}
+        #   run: npm run build
+        #   env:
+        #     NODE_ENV: production
+        #     NODE_AUTH_TOKEN: ""
+        #     NPM_TOKEN: ""
+        #     GITHUB_TOKEN: ""
+        - name: Build in sandbox
           run: |
-            npm ci --ignore-scripts --no-audit --no-fund
-          env:
-            NODE_AUTH_TOKEN: ""
-            NPM_TOKEN: ""
-            GITHUB_TOKEN: ""
-
-        - name: Build
-          working-directory: ${{ needs.detect.outputs.submodule_path }}
-          run: npm run build
-          env:
-            NODE_ENV: production
-            NODE_AUTH_TOKEN: ""
-            NPM_TOKEN: ""
-            GITHUB_TOKEN: ""
-
+            docker run --rm \
+              --network none \          
+              --memory 512m \           
+              --cpus 1 \                 
+              --read-only \            
+              --tmpfs /tmp \            
+              -v ${{ github.workspace }}/${{ needs.detect.outputs.submodule_path }}:/app:ro \
+              -v /output:/app/dist \
+              node:20-alpine \
+              sh -c "cd /app && npm ci --ignore-scripts && npm run build"
         - name: Check artifact size
           run: |
             SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
