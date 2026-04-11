@@ -30,6 +30,36 @@ jobs:
             echo "found=true" >> $GITHUB_OUTPUT
             echo "$CHANGED"
           fi
+
+      - name: Validate submodule path (no traversal attacks)
+        env:
+          SUBMODULE: ${{ steps.find.outputs.submodule_path }}
+        run: |
+          # Block path traversal
+          if [[ "$SUBMODULE" == *".."* || "$SUBMODULE" == "/"* ]]; then
+            echo "ERROR: Invalid submodule path: $SUBMODULE"
+            exit 1
+          fi
+          # Must be inside widgets/ folder
+          if [[ "$SUBMODULE" != widgets/* ]]; then
+            echo "ERROR: Submodule is not under widgets/ folder: $SUBMODULE"
+            exit 1
+          fi
+
+          # Must exist in .gitmodules (already committed to repo)
+          if ! grep -q "path = $SUBMODULE" .gitmodules; then
+            echo "ERROR: Submodule not found in .gitmodules: $SUBMODULE"
+            exit 1
+          fi
+
+          # Must be an actual directory
+          if [ ! -d "$SUBMODULE" ]; then
+            echo "ERROR: Submodule directory does not exist: $SUBMODULE"
+            exit 1
+          fi
+
+          echo "Submodule path is valid: $SUBMODULE"
+    
   build:
       name: Build (${{ needs.detect.outputs.submodule_path }})
       runs-on: ubuntu-latest
@@ -45,34 +75,7 @@ jobs:
             ref: refs/pull/${{ github.event.pull_request.number }}/merge
             submodules: recursive
             fetch-depth: 1
-        - name: Validate submodule path (no traversal attacks)
-          run: |
-            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
-            # Block path traversal
-            if [[ "$SUBMODULE" == *".."* || "$SUBMODULE" == "/"* ]]; then
-              echo "ERROR: Invalid submodule path: $SUBMODULE"
-              exit 1
-            fi
-            # Must be inside widgets/ folder
-            if [[ "$SUBMODULE" != widgets/* ]]; then
-              echo "ERROR: Submodule is not under widgets/ folder: $SUBMODULE"
-              exit 1
-            fi
-
-            # Must exist in .gitmodules (already committed to repo)
-            if ! grep -q "path = $SUBMODULE" .gitmodules; then
-              echo "ERROR: Submodule not found in .gitmodules: $SUBMODULE"
-              exit 1
-            fi
-
-            # Must be an actual directory
-            if [ ! -d "$SUBMODULE" ]; then
-              echo "ERROR: Submodule directory does not exist: $SUBMODULE"
-              exit 1
-            fi
-
-            echo "Submodule path is valid: $SUBMODULE"
-
+      
         - name: Check package.json exists
           run: |
             SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
