@@ -121,13 +121,11 @@ jobs:
               --network none \
               --memory 512m \
               --cpus 1 \
-              --read-only \
-              --tmpfs /tmp \
               -v "${SRC}:/app:ro" \
               -v "/tmp/dist-output:/app/dist" \
               node:20-alpine \
               sh -c "cd /app && npm ci --ignore-scripts && npm run build"
-              
+
         - name: Check artifact size
           run: |
             SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
