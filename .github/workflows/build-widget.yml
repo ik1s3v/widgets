@@ -121,10 +121,10 @@ jobs:
               --network none \
               --memory 512m \
               --cpus 1 \
-              -v "${SRC}:/app:ro" \
-              -v "/tmp/dist-output:/app/dist" \
+              -v "${SRC}:/src:ro" \
+              -v "/tmp/dist-output:/output" \
               node:20-alpine \
-              sh -c "cd /app && npm ci --ignore-scripts && npm run build"
+              sh -c "cp -r /src /app && cd /app && npm ci --ignore-scripts && npm run build && cp -r dist/* /output/"
 
         - name: Check artifact size
           run: |
