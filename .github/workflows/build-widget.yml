@@ -47,7 +47,7 @@ jobs:
           fi
 
           # Must exist in .gitmodules (already committed to repo)
-          if ! grep -q "path = $SUBMODULE" .gitmodules; then
+          if ! grep -qF "path = $SUBMODULE" .gitmodules; then
             echo "ERROR: Submodule not found in .gitmodules: $SUBMODULE"
             exit 1
           fi
@@ -108,23 +108,24 @@ jobs:
         #     NPM_TOKEN: ""
         #     GITHUB_TOKEN: ""
         - name: Build in sandbox
+          env:
+            SUBMODULE_PATH: ${{ needs.detect.outputs.submodule_path }}
           run: |
-            SUBMODULE="${{ needs.detect.outputs.submodule_path }}"
-            WORKSPACE="${{ github.workspace }}"
-            SRC="${WORKSPACE}/${SUBMODULE}"
+            SRC="${GITHUB_WORKSPACE}/${SUBMODULE_PATH}"
+            DIST="${SRC}/dist"
             
             echo "Building: $SRC"
             
-            mkdir -p /tmp/dist-output
+            mkdir -p "$DIST"
             
             docker run --rm \
               --network none \
               --memory 512m \
               --cpus 1 \
               -v "${SRC}:/src:ro" \
-              -v "/tmp/dist-output:/output" \
+              -v "${DIST}:/output" \
               node:20-alpine \
-              sh -c "cp -r /src /app && cd /app && npm ci --ignore-scripts && npm run build && cp -r dist/* /output/"
+              sh -c "cp -r /src /app && cd /app && npm ci --ignore-scripts && npm run build && cp -r dist/* /output/ && chmod -R 777 /output/"
 
         - name: Check artifact size
           run: |
