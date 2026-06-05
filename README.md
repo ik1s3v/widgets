@@ -108,4 +108,4 @@ Your license file should be at the root of your widget repository. Any filename 
 
 ## Need Help?
 
-If you have questions about widget development or the submission process, please contact Discord [Widy](https://discord.gg/UCdUBBrAA).
+If you have questions about widget development or the submission process, please contact Discord [Widy](https://discord.gg/KWxhFTrusK).
