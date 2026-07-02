@@ -9,6 +9,12 @@ const widgetPath = String(process.env.WIDGET_PATH);
 const manifestPath = join(widgetPath, "manifest.json");
 
 try {
+	const CspSchema = z.object({
+		connect_src: z.array(z.string()).optional(),
+		img_src: z.array(z.string()).optional(),
+		media_src: z.array(z.string()).optional(),
+	});
+
 	const ManifestSchema = z.object({
 		manifest_version: z.number().int(),
 		id: z.string().min(1),
@@ -23,6 +29,7 @@ try {
 		repository: z.string().min(1),
 		scopes: z.array(z.string()).default([]),
 		connect_src: z.array(z.string()).default([]),
+		csp: CspSchema.optional(),
 	});
 
 	const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as IManifest;
