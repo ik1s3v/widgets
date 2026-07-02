@@ -1,3 +1,6 @@
 [submodule "widgets/donation-timer"]
 	path = widgets/donation-timer
 	url = https://github.com/ik1s3v/donation-timer.git
+[submodule "widgets/chat-box"]
+	path = widgets/chat-box
+	url = git@github.com:ik1s3v/chat-box.git
