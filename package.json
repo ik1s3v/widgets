@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
-    "@widy/sdk": "^1.0.42",
+    "@widy/sdk": "^1.0.48",
     "zod": "^4.3.6"
   }
 }
