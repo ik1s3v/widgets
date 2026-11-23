@@ -54,7 +54,11 @@ Add an entry for your widget in the `widgets.json` file. The entry should follow
         "scopes": [
             // Add appropriate scopes from @widy/sdk WidgetScopes based on your widget's needs
         ],
-        "connect_src": []
+        "csp": [
+            "connect_src": [],
+            "img_src": [],
+            "media_src": [],
+        ]
     }
 }
 ```

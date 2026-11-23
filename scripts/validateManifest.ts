@@ -30,6 +30,7 @@ try {
 		scopes: z.array(z.string()).default([]),
 		connect_src: z.array(z.string()).default([]),
 		csp: CspSchema.optional(),
+		embedded:z.boolean().optional()
 	});
 
 	const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as IManifest;
